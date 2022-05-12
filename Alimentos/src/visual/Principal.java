@@ -36,7 +36,6 @@ public class Principal extends JFrame {
 				try {
 					
 					Almacen al = new Almacen();
-					ArrayList<Producto> productosV = new ArrayList<Producto>();
 					Principal frame = new Principal(al);
 					frame.setVisible(true);
 				} catch (Exception e) {
@@ -76,6 +75,12 @@ public class Principal extends JFrame {
 		facturaMenu.add(crearFactura);
 		
 		JMenuItem listaFactura = new JMenuItem("Lista de facturas");
+		listaFactura.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				listFactura listF = new listFactura(con);
+				listF.setVisible(true);
+			}
+		});
 		facturaMenu.add(listaFactura);
 		
 		JMenu productoMenu_1 = new JMenu("Productos");
@@ -96,7 +101,7 @@ public class Principal extends JFrame {
 		JMenuItem regisSuplidor = new JMenuItem("Registrar suplidor");
 		regisSuplidor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				RegSuplidor rgS = new RegSuplidor(al,getConnection());
+				RegSuplidor rgS = new RegSuplidor(getConnection());
 				rgS.setVisible(true);
 			}
 		});
@@ -105,7 +110,7 @@ public class Principal extends JFrame {
 		JMenuItem listaSuplidor = new JMenuItem("Lista de Suplidores");
 		listaSuplidor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				listSuplidor listS = new listSuplidor(getConnection());
+				listSuplidor2 listS = new listSuplidor2(getConnection());
 				listS.setVisible(true);
 			}
 		});
@@ -115,6 +120,12 @@ public class Principal extends JFrame {
 		menuBar.add(clienteMenu_3);
 		
 		JMenuItem listaCliente = new JMenuItem("Lista de clientes");
+		listaCliente.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				listCliente2 listC = new listCliente2(getConnection());
+				listC.setVisible(true);
+			}
+		});
 		clienteMenu_3.add(listaCliente);
 	}
 	

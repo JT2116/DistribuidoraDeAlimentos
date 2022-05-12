@@ -62,15 +62,16 @@ public class RegSuplidor extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public RegSuplidor(Almacen al,Connection con) {
-		setBounds(100, 100, 369, 424);
+	public RegSuplidor(Connection con) {
+		setBounds(100, 100, 369, 439);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
 		JPanel buttonPane = new JPanel();
-		buttonPane.setBounds(0, 350, 353, 35);
+		buttonPane.setBorder(new TitledBorder(null, "", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		buttonPane.setBounds(10, 358, 336, 35);
 		contentPane.add(buttonPane);
 		buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		
@@ -178,7 +179,7 @@ public class RegSuplidor extends JFrame {
 	
 	
 	public void insertarBDS(int ID,String nombresSuplidor,String nombreRepresentate, String apellidoRepresentate,String email, String telefono,Connection con) {
-		String insertTableSQLMarcaModelo = "insert into Suplidor values (?,?,?,?,?,?)";
+		String insertTableSQLMarcaModelo = "insert into Suplidor values (?,?,?,?,?,?,?)";
 		PreparedStatement st3 = null;
 		ResultSet datos3 = null;
 		String nS = null;
@@ -189,7 +190,7 @@ public class RegSuplidor extends JFrame {
 		int marcar = 0;
 		try {
 			PreparedStatement preparedStmtV = con.prepareStatement(insertTableSQLMarcaModelo);
-			st3 = con.prepareStatement("select distinct * from Suplidor where Nombre_Compania = ? and Email = ? and Telefono = ?");
+			st3 = con.prepareStatement("select distinct * from Suplidor where Nombre_Compania = ? and Email = ? and Telefono = ? and Enable = 1");
 			
 			st3.setString(1,nombresSuplidor);
 			st3.setString(2,email);
@@ -220,7 +221,8 @@ public class RegSuplidor extends JFrame {
 				preparedStmtV.setString(3,nombreRepresentate);
 				preparedStmtV.setString(4,apellidoRepresentate);
 				preparedStmtV.setString(5,email);
-				preparedStmtV.setString(6,telefono);		
+				preparedStmtV.setString(6,telefono);
+				preparedStmtV.setInt(7,1);
 				preparedStmtV.execute();
 				JOptionPane.showMessageDialog(null, "Registro Exitoso", "Información", JOptionPane.INFORMATION_MESSAGE);
 			}

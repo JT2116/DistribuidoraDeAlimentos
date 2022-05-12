@@ -57,9 +57,9 @@ public class RegCliente extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public RegCliente(Almacen al,Connection con) {
+	public RegCliente(Connection con) {
 		
-		setBounds(100, 100, 388, 377);
+		setBounds(100, 100, 385, 380);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -119,7 +119,7 @@ public class RegCliente extends JFrame {
 		panel.add(lblNewLabel_7);
 		
 		JLabel lblNewLabel_7_1 = new JLabel("Correo electronico:");
-		lblNewLabel_7_1.setBounds(10, 217, 96, 14);
+		lblNewLabel_7_1.setBounds(10, 217, 201, 14);
 		panel.add(lblNewLabel_7_1);
 		
 		txtEmail = new JTextField();
@@ -128,7 +128,8 @@ public class RegCliente extends JFrame {
 		panel.add(txtEmail);
 		
 		JPanel buttonPane = new JPanel();
-		buttonPane.setBounds(0, 297, 372, 38);
+		buttonPane.setBorder(new TitledBorder(null, "", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		buttonPane.setBounds(10, 297, 352, 38);
 		contentPane.add(buttonPane);
 		buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		
@@ -182,7 +183,7 @@ public class RegCliente extends JFrame {
 	}
 	
 	public void insertarBDC(int ID,String nombres, String apellidos,String email, String telefono,float credito,Connection con) {
-		String insertTableSQLMarcaModelo = "insert into Cliente values (?,?,?,?,?,?,?)";
+		String insertTableSQLMarcaModelo = "insert into Cliente values (?,?,?,?,?,?,?,?)";
 		PreparedStatement st3 = null;
 		ResultSet datos3 = null;
 		String nC = null;
@@ -193,7 +194,7 @@ public class RegCliente extends JFrame {
 		int marcar = 0;
 		try {
 			PreparedStatement preparedStmtV = con.prepareStatement(insertTableSQLMarcaModelo);
-			st3 = con.prepareStatement("select distinct * from Cliente where Nombres = ? and Apellidos = ?");
+			st3 = con.prepareStatement("select distinct * from Cliente where Nombres = ? and Apellidos = ? and Enable = 1");
 			
 			st3.setString(1,nombres);
 			st3.setString(2,apellidos);
@@ -226,6 +227,7 @@ public class RegCliente extends JFrame {
 				preparedStmtV.setString(5,telefono);	
 				preparedStmtV.setFloat(6,credito);
 				preparedStmtV.setFloat(7,0);
+				preparedStmtV.setInt(8,1);
 				preparedStmtV.execute();
 				JOptionPane.showMessageDialog(null, "Registro Exitoso", "Información", JOptionPane.INFORMATION_MESSAGE);
 			}

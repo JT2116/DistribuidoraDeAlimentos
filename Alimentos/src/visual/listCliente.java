@@ -12,10 +12,19 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
+import javax.swing.JLabel;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class listCliente extends JFrame {
 	private DefaultTableModel tableCliente;
@@ -23,7 +32,8 @@ public class listCliente extends JFrame {
 	private JTable table;
 	
 	public static String selectIDcliente;
-
+	private JTextField txtBuscarC;
+	
 	/**
 	 * Launch the application.
 	 */
@@ -74,8 +84,7 @@ public class listCliente extends JFrame {
 				selectIDcliente = (String) table.getValueAt(index, 0);
 				
 				buscarCliente(Integer.valueOf(selectIDcliente), con);
-				
-				
+								
 				dispose();
 			}
 		});
@@ -86,6 +95,31 @@ public class listCliente extends JFrame {
 		
 		scrollPane.setViewportView(table);
 		
+		txtBuscarC = new JTextField();
+		txtBuscarC.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				String cadena = (txtBuscarC.getText());
+				
+				txtBuscarC.setText(cadena);
+				
+				repaint();
+				
+				filtrarCliente();
+				
+			}
+		});
+		txtBuscarC.setColumns(10);
+		txtBuscarC.setBounds(10, 74, 183, 20);
+		panel.add(txtBuscarC);
+		
+		JLabel lblBuscarCliente = new JLabel("Buscar Cliente:");
+		lblBuscarCliente.setBounds(10, 49, 162, 14);
+		panel.add(lblBuscarCliente);
+		
+		TableRowSorter sorter = new TableRowSorter<>(table.getModel());
+		
+		table.setRowSorter(sorter);
 		
 	}
 	
@@ -93,14 +127,14 @@ public class listCliente extends JFrame {
 	public void mostrar(Connection con){
 		//Principal auxp = new Principal();
 		//Connection cn = auxp.getConnection();
-		tableCliente.setColumnIdentifiers(new Object[] {"ID","Nombres","Apellidos","Email","Telefono","Credito","Deuda"});
+		tableCliente.setColumnIdentifiers(new Object[] {"ID","Nombre","Email","Telefono","Credito","Deuda"});
 		Statement st;
 		ResultSet datos = null;
 		try {
 			st = con.createStatement();
-			datos = st.executeQuery("select ID_Cliente,Nombres,Apellidos,Email,Telefono,Credito,Deuda from Cliente");
+			datos = st.executeQuery("select ID_Cliente,Nombres,Apellidos,Email,Telefono,Credito,Deuda from Cliente where Enable = 1");
 			while(datos.next()) {
-				tableCliente.addRow(new Object[]{datos.getString("ID_Cliente"),datos.getString("Nombres"),datos.getString("Apellidos"),datos.getString("Email"),datos.getString("Telefono"),datos.getString("Credito"),datos.getString("Deuda")});
+				tableCliente.addRow(new Object[]{datos.getString("ID_Cliente"),datos.getString("Nombres")+" "+datos.getString("Apellidos"),datos.getString("Email"),datos.getString("Telefono"),datos.getString("Credito"),datos.getString("Deuda")});
 			}
 			table.setModel(tableCliente);
 		}catch(Exception e) {
@@ -128,13 +162,22 @@ public class listCliente extends JFrame {
 				RegFactura.txtEmailC.setText(datos3.getString("Email"));
 				RegFactura.txtCreditoC.setText(String.valueOf( datos3.getFloat("Credito")));
 				RegFactura.txtDeudaC.setText(String.valueOf( datos3.getFloat("Deuda")));
-				//repaint();
-				
-				
+				//repaint();								
 			}
 		} catch (Exception e) {
 			 System.out.println(e.getMessage());
 		}	
+	}
+	
+	private void filtrarCliente() {
+		String filtro = txtBuscarC.getText();
+		
+		TableRowSorter trsfiltro = new TableRowSorter(table.getModel());
+		
+		table.setRowSorter(trsfiltro);
+		
+		trsfiltro.setRowFilter(RowFilter.regexFilter(txtBuscarC.getText(), 1));
+				
 	}
 	
 	

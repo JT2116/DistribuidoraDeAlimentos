@@ -11,14 +11,25 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
+
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class listSuplidor extends JFrame {
 	private DefaultTableModel tableSuplidor;
 	private JPanel contentPane;
 	private JTable table;
+	private JTextField txtBuscarS;
 
+	public static String selectSuplidor;
 	/**
 	 * Launch the application.
 	 */
@@ -62,11 +73,48 @@ public class listSuplidor extends JFrame {
 		panel_1.add(scrollPane);
 		
 		table = new JTable();
+		table.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				int index = table.getSelectedRow();
+				selectSuplidor = (String) table.getValueAt(index, 1);
+								
+				RegProducto.txtNombreS.setText(selectSuplidor);
+				
+				dispose();				
+			}
+		});
 		scrollPane.setColumnHeaderView(table);
 		
 		tableSuplidor= new DefaultTableModel();
 		mostrar(con);
 		scrollPane.setViewportView(table);
+		
+		txtBuscarS = new JTextField();
+		txtBuscarS.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				String cadena = (txtBuscarS.getText());
+				
+				txtBuscarS.setText(cadena);
+				
+				repaint();
+				
+				filtrarSuplidor();
+				
+			}
+		});
+		txtBuscarS.setColumns(10);
+		txtBuscarS.setBounds(10, 74, 183, 20);
+		panel.add(txtBuscarS);
+		
+		JLabel lblBuscarSuplidor = new JLabel("Buscar suplidor:");
+		lblBuscarSuplidor.setBounds(10, 49, 162, 14);
+		panel.add(lblBuscarSuplidor);
+		
+		TableRowSorter sorter = new TableRowSorter<>(table.getModel());
+		
+		table.setRowSorter(sorter);
 		
 	}
 	
@@ -79,7 +127,7 @@ public class listSuplidor extends JFrame {
 		ResultSet datos = null;
 		try {
 			st = con.createStatement();
-			datos = st.executeQuery("select ID_Suplidor,Nombre_Compania,Nombre_Representante,Apellido_Representante,Email,Telefono from Suplidor");
+			datos = st.executeQuery("select ID_Suplidor,Nombre_Compania,Nombre_Representante,Apellido_Representante,Email,Telefono from Suplidor where Enable = 1");
 			while(datos.next()) {
 				tableSuplidor.addRow(new Object[]{datos.getString("ID_Suplidor"),datos.getString("Nombre_Compania"),datos.getString("Nombre_Representante"),datos.getString("Apellido_Representante"),datos.getString("Email"),datos.getString("Telefono")});
 			}
@@ -91,7 +139,16 @@ public class listSuplidor extends JFrame {
 	
 	
 	
-	
+	private void filtrarSuplidor() {
+		String filtro = txtBuscarS.getText();
+		
+		TableRowSorter trsfiltro = new TableRowSorter(table.getModel());
+		
+		table.setRowSorter(trsfiltro);
+		
+		trsfiltro.setRowFilter(RowFilter.regexFilter(txtBuscarS.getText(), 1));
+				
+	}
 	
 	
 	

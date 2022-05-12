@@ -2,6 +2,9 @@ package visual;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,10 +27,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
+import javax.swing.text.JTextComponent;
 
 import logica.Almacen;
 import logica.Producto;
 import logica.Suplidor;
+import visual.listFactura.BillPrintable;
 
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -46,9 +51,22 @@ import javax.swing.RowFilter;
 import javax.swing.JTable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
+import javax.print.PrintService;
 import javax.swing.DefaultComboBoxModel;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+
 
 public class RegFactura extends JFrame {
 
@@ -81,6 +99,15 @@ public class RegFactura extends JFrame {
 	private DefaultTableModel tableProductosAntes;
 	private DefaultTableModel tableProductosVentas;
 	private JTextField txtBuscar;
+	
+	private int idFactura;
+	
+	private ArrayList<String> producto = new ArrayList<String>();		
+	private ArrayList<Float> precioVenta = new ArrayList<Float>();		
+	private ArrayList<Float> precioComp = new ArrayList<Float>();		
+	private float precioTotal;		
+	private ArrayList<Integer> cantidadComp = new ArrayList<Integer>();
+	private java.sql.Timestamp fechaCreacion;
 	
 	/**
 	 * Launch the application.
@@ -213,7 +240,7 @@ public class RegFactura extends JFrame {
 		JButton btnNewButton = new JButton("Crear cliente");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				RegCliente rgC = new RegCliente(al,con);
+				RegCliente rgC = new RegCliente(con);
 				rgC.setVisible(true);
 			}
 		});
@@ -228,7 +255,7 @@ public class RegFactura extends JFrame {
 					int idC = idCliente;
 					String respuesta = JOptionPane.showInputDialog("¿Cuanto desea abonar al credito?");
 					
-					if(!(respuesta == null)) {
+					if(!(respuesta == null) && Float.parseFloat(respuesta) > 0) {
 												
 						//float creditoActual = Float.parseFloat(respuesta);
 						
@@ -321,7 +348,7 @@ public class RegFactura extends JFrame {
 				
 				DecimalFormat dv = new DecimalFormat("#.00");
 				
-				int marca = 0;				
+								
 				int index = tableVentas.getSelectedRow();
 				//int tablaVentaCount = tableVentas.getRowCount();
 				//int filaCV = 0;
@@ -449,6 +476,7 @@ public class RegFactura extends JFrame {
 		txtBuscar.setColumns(10);
 		
 		JPanel buttonPane = new JPanel();
+		buttonPane.setBorder(new TitledBorder(null, "", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		buttonPane.setLayout(null);
 		buttonPane.setBounds(10, 505, 958, 33);
 		contentPane.add(buttonPane);
@@ -462,19 +490,59 @@ public class RegFactura extends JFrame {
 				Calendar cal = Calendar.getInstance();
 				java.sql.Timestamp timestamp = new java.sql.Timestamp(cal.getTimeInMillis());
 				
-				float credito = Float.parseFloat(txtCreditoC.getText());
+
 				
-				float deuda = Float.parseFloat(txtDeudaC.getText());
+				fechaCreacion = timestamp;
 				
+				//System.out.println(timestamp);
 				
 				if (idC != 0 && tableVentas.getRowCount() != 0) {
+					float credito = Float.parseFloat(txtCreditoC.getText());
+					
+					float deuda = Float.parseFloat(txtDeudaC.getText());
 					
 					String[] options = {"Crédito", "Contado"};
 					int seleccion = JOptionPane.showOptionDialog(null, "¿Que tipo de compra desea hacer?", "Tipo de compra", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 								
-					if(seleccion==1) {
-						//System.out.println("ewe");						
+					switch (seleccion) {
+
+					case 0:
+						if(credito>totalCompra && credito>deuda) {
+							//System.out.println("owo");
+							
+							int idF2 = getIdFactura(con);
+							
+							crearFactura(idF2,idC,timestamp,"Crédito",con);
+							
+							for (int i = 0; i < tableVentas.getRowCount(); i++) {
+								
+								detallesFactura(getIdDetallesC(con),idF2,(int) tableVentas.getValueAt(i, 0), (float) tableVentas.getValueAt(i, 4),(int) tableVentas.getValueAt(i, 3), con); 
+								//int idD = getIdDetallesC(con);
+								//System.out.println(idD);		
+								actualizarProducto((int) tableVentas.getValueAt(i, 0), (int) tableVentas.getValueAt(i, 3), con);
+							}
+							
+							float creditoActual = Float.parseFloat(txtCreditoC.getText());
+							
+							float deudaActual = Float.parseFloat(txtDeudaC.getText());
+							
+							atualizarDeudaCredito(idC,creditoActual, deudaActual, totalCompra, con);
+							tableProductosVentas.setRowCount(0);
+																					
+							totalC = 0;
+																					
+							DestallesFactura dF = new DestallesFactura(idF2,con);
+							dF.setVisible(true);
+							
+							ImprimirFactura(idF2,con);
+							clean();
+						}else if(credito<totalCompra) {
+							JOptionPane.showMessageDialog(null, "No tiene suficiente credito", "Validación", JOptionPane.WARNING_MESSAGE);
+						}
+																	
+						break;
 						
+					case 1:
 						int idF = getIdFactura(con);
 						
 						crearFactura(idF,idC,timestamp,"Contado",con);
@@ -490,42 +558,22 @@ public class RegFactura extends JFrame {
 						
 						tableProductosVentas.setRowCount(0);
 						
-						clean();
+						
 						
 						totalC = 0;
-					}
-					
-					if(credito>totalCompra && credito>deuda && seleccion == 0) {
-						System.out.println("owo");
 						
-						int idF = getIdFactura(con);
+						DestallesFactura dF = new DestallesFactura(idF,con);
+						dF.setVisible(true);
 						
-						crearFactura(idF,idC,timestamp,"Crédito",con);
-						
-						for (int i = 0; i < tableVentas.getRowCount(); i++) {
-							
-							detallesFactura(getIdDetallesC(con),idF,(int) tableVentas.getValueAt(i, 0), (float) tableVentas.getValueAt(i, 4),(int) tableVentas.getValueAt(i, 3), con); 
-							//int idD = getIdDetallesC(con);
-							//System.out.println(idD);		
-							actualizarProducto((int) tableVentas.getValueAt(i, 0), (int) tableVentas.getValueAt(i, 3), con);
-						}
-						
-						float creditoActual = Float.parseFloat(txtCreditoC.getText());
-						
-						float deudaActual = Float.parseFloat(txtDeudaC.getText());
-						
-						atualizarDeudaCredito(idC,creditoActual, deudaActual, totalCompra, con);
-						tableProductosVentas.setRowCount(0);
-						
+						ImprimirFactura(idF,con);
 						clean();
-						
-						totalC = 0;
-					}else if(credito<totalCompra) {
-						JOptionPane.showMessageDialog(null, "No tiene suficiente credito", "Validación", JOptionPane.WARNING_MESSAGE);
+						break;
+
+					default:
+						break;
 					}
 					
-					
-					
+				
 				}else {
 					JOptionPane.showMessageDialog(null, "Selecione un cliente y/o un producto", "Validación", JOptionPane.WARNING_MESSAGE);
 				}
@@ -545,6 +593,9 @@ public class RegFactura extends JFrame {
 		cancelButton.setActionCommand("Cancel");
 		cancelButton.setBounds(884, 5, 64, 23);
 		buttonPane.add(cancelButton);
+		
+	
+		
 	}
 	
 	private void llenarAlmacen(Almacen al,Connection con) {
@@ -554,7 +605,7 @@ public class RegFactura extends JFrame {
 		
 		try {
 			st = con.createStatement();
-			datos = st.executeQuery("select ID_Producto,Nombre,Nombre_Compania,Cantidad,PrecioCompra,PrecioVenta,Tipo,Descripcion from Producto join Suplidor on Producto.Suplidor = Suplidor.ID_Suplidor");
+			datos = st.executeQuery("select ID_Producto,Nombre,Nombre_Compania,Cantidad,PrecioCompra,PrecioVenta,Tipo,Descripcion from Producto join Suplidor on Producto.Suplidor = Suplidor.ID_Suplidor where Producto.Enable = 1");
 			
 			while(datos.next()) {
 				
@@ -696,11 +747,7 @@ public class RegFactura extends JFrame {
 		
 		
 	}
-	
-	
-	
-
-	
+		
 	private void crearFactura(int idF, int idC, java.sql.Timestamp timestamp, String tipoPago,Connection con) {
 		String insertTableSQLMarcaModelo = "insert into Factura values (?,?,?,?)";
 		//PreparedStatement st = null;
@@ -724,9 +771,7 @@ public class RegFactura extends JFrame {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
-	
-		
-		
+					
 	}
 		
 	private int getIdFactura(Connection con) {
@@ -825,7 +870,7 @@ public class RegFactura extends JFrame {
 			
 			datos = st.executeQuery();
 			
-			while(datos.next()) {
+			while(datos.next()) { 
 				
 				cantidadActual = datos.getInt("Cantidad");
 				
@@ -841,17 +886,144 @@ public class RegFactura extends JFrame {
 		}
 						
 	}
-	
-
-	
-	
+		
 	private void clean() {
+		idCliente = 0;
 		txtNombreC.setText("");
 		txtTelefonoC.setText("");
 		txtEmailC.setText("");
 		txtCreditoC.setText("");
 		txtDeudaC.setText("");
 		txtTotal.setText("");
+		producto.clear();		
+		precioVenta.clear();		
+		precioComp.clear();		
+		precioTotal = 0;		
+		cantidadComp.clear();
 		
 	}
+	
+	private void ImprimirFactura(int idF, Connection con) {
+		idFactura = idF;
+		PreparedStatement st = null;
+		ResultSet datos = null;
+		
+		try {
+			st = con.prepareStatement("select Nombre,PrecioVenta,CantidadComprado,Precio from DetallesCompra join Producto on DetallesCompra.Producto = Producto.ID_Producto where Factura = ?");
+			
+			st.setInt(1,idF);
+			
+			datos = st.executeQuery();
+			
+			while(datos.next()) {
+				
+				producto.add(datos.getString("Nombre"));
+				precioVenta.add(datos.getFloat("PrecioVenta"));
+				precioComp.add(datos.getFloat("Precio"));
+				cantidadComp.add(datos.getInt("CantidadComprado"));
+								
+				precioTotal += datos.getInt("Precio");
+				
+			}						
+		} catch (Exception e) {
+			System.out.println(e.toString());
+		}
+
+        PrinterJob pj = PrinterJob.getPrinterJob();        
+        pj.setPrintable(new BillPrintable(),getPageFormat(pj));
+        //pj.setPrintable(new BillPrintable());
+       
+        
+        if (pj.printDialog()) {
+            try {
+                pj.print();
+            } catch (PrinterException ex) {
+            }
+        }else{
+        	JOptionPane.showMessageDialog(this, "La impresion se cancelo");
+        }
+		
+	}
+	
+    public PageFormat getPageFormat(PrinterJob pj) {
+        
+        //Double bHeight=0.0;
+    	
+    	PageFormat pf = pj.defaultPage();
+	    Paper paper = pf.getPaper();    
+	
+	    double bodyHeight = Double.valueOf(producto.size());  
+	    double headerHeight = 5.0;                  
+	    double footerHeight = 5.0;        
+	    double width = cm_to_pp(8); 
+	    double height = cm_to_pp(headerHeight+bodyHeight+footerHeight); 
+	    paper.setSize(width, height);
+	    paper.setImageableArea(0,10,width,height - cm_to_pp(1));  
+	            
+	    pf.setOrientation(PageFormat.PORTRAIT);  
+	    pf.setPaper(paper);    
+	
+	    return pf;
+    }
+    
+    
+    protected static double cm_to_pp(double cm) {            
+	        return toPPI(cm * 0.393600787);            
+    }
+ 
+    protected static double toPPI(double inch) {            
+	        return inch * 72d;            
+    }
+    
+    public class BillPrintable implements Printable {
+    	public int print(Graphics graphics, PageFormat pageFormat,int pageIndex) throws PrinterException {
+    		
+    		
+    		int result = NO_SUCH_PAGE;
+    		if (pageIndex == 0) {
+    			Graphics2D g2d = (Graphics2D) graphics;                    
+    			double width = pageFormat.getImageableWidth();                               
+    			g2d.translate((int) pageFormat.getImageableX(),(int) pageFormat.getImageableY()); 
+    			//  FontMetrics metrics=g2d.getFontMetrics(new Font("Arial",Font.BOLD,7));
+    			try{
+    				int y=20;
+		            int yShift = 10;
+		            int headerRectHeight=15;
+		            
+		            g2d.setFont(new Font("Monospaced",Font.PLAIN,9));		        
+		            g2d.drawString("-------------------------------------",12,y);y+=yShift;
+		            g2d.drawString("              Factura#"+idFactura+"              ",12,y);y+=yShift;
+
+		            g2d.drawString("-------------------------------------",12,y);y+=headerRectHeight;
+	
+		            g2d.drawString(" Productos                 Valor   ",10,y);y+=yShift;
+		            g2d.drawString("-------------------------------------",10,y);y+=headerRectHeight;
+		           
+		            for (int i = 0; i < producto.size(); i++) {
+		            	g2d.drawString(" "+producto.get(i)+"                            ",10,y);y+=yShift;
+		            	g2d.drawString("      "+cantidadComp.get(i)+" * "+precioVenta.get(i),10,y); g2d.drawString(precioComp.get(i)+"",160,y);y+=yShift;
+						
+					}
+		            		            		          
+		            g2d.drawString("-------------------------------------",10,y);y+=yShift;
+		            g2d.drawString(" Total:                     "+precioTotal+"   ",10,y);y+=yShift;
+		            g2d.drawString("-------------------------------------",10,y);y+=yShift;
+		            g2d.drawString(" Fecha:       "+fechaCreacion+"   ",10,y);y+=yShift;	  
+		            g2d.drawString("*************************************",10,y);y+=yShift;
+		            g2d.drawString("       Gracias por su compra            ",10,y);y+=yShift;
+		            g2d.drawString("*************************************",10,y);y+=yShift;
+
+		            
+    			}
+    			catch(Exception e){
+    				e.printStackTrace();	
+    			}
+    			result = PAGE_EXISTS;
+    			}    
+		          return result;    
+		      }
+    	}
+	
+	
+	
 }
